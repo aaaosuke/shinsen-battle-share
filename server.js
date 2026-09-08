@@ -1,0 +1,20 @@
+const express=require("express"),multer=require("multer"),path=require("path"),fs=require("fs"),crypto=require("crypto");
+const app=express(),PORT=+process.env.PORT||3000,BASE=(process.env.PUBLIC_BASE_URL||"").replace(/\/$/,""),ADMIN=process.env.ADMIN_PASSWORD||"change-this-password";
+const MAX_MB=+(process.env.MAX_FILE_MB||15),MAX_FILES=+(process.env.MAX_FILES||50),ROOT=__dirname;
+const UP=path.join(ROOT,"uploads"),DATA=path.join(ROOT,"data","logs.json"); fs.mkdirSync(UP,{recursive:true});fs.mkdirSync(path.dirname(DATA),{recursive:true});if(!fs.existsSync(DATA))fs.writeFileSync(DATA,"[]");
+app.use(express.json());app.use(express.static(path.join(ROOT,"public")));app.use("/uploads",express.static(UP));
+const storage=multer.diskStorage({destination:UP,filename:(r,f,cb)=>cb(null,Date.now()+"-"+crypto.randomUUID()+path.extname(f.originalname).toLowerCase())});
+const upload=multer({storage,limits:{fileSize:MAX_MB*1024*1024,files:MAX_FILES},fileFilter:(r,f,cb)=>cb(null,/^image\/(jpeg|png|webp|gif)$/.test(f.mimetype))});
+const read=()=>JSON.parse(fs.readFileSync(DATA,"utf8")),write=x=>fs.writeFileSync(DATA,JSON.stringify(x,null,2));
+app.get("/api/health",(r,s)=>s.json({ok:true}));
+app.get("/api/logs",(r,s)=>s.json(read().sort((a,b)=>b.createdAt.localeCompare(a.createdAt))));
+app.post("/api/upload",(req,res)=>upload.array("images",MAX_FILES)(req,res,e=>{
+ if(e)return res.status(400).json({error:e.message});
+ if(!req.files?.length)return res.status(400).json({error:"画像を選択してください"});
+ const battleId=String(req.body.battleId||"未分類").trim(),category=String(req.body.category||"その他"),note=String(req.body.note||"").trim(),now=new Date().toISOString();
+ const old=read(), records=req.files.map(f=>{const rel="/uploads/"+f.filename;return{id:crypto.randomUUID(),battleId,category,note,originalName:f.originalname,fileName:f.filename,url:BASE?BASE+rel:rel,createdAt:now}});
+ write([...records,...old]);res.json({ok:true,records});
+}));
+app.delete("/api/logs/:id",(req,res)=>{if((req.get("x-admin-password")||"")!==ADMIN)return res.status(403).json({error:"管理者パスワードが違います"});let a=read(),x=a.find(x=>x.id===req.params.id);if(!x)return res.status(404).json({error:"見つかりません"});try{fs.unlinkSync(path.join(UP,x.fileName))}catch{}write(a.filter(x=>x.id!==req.params.id));res.json({ok:true})});
+app.get("/api/export",(r,s)=>{s.setHeader("Content-Disposition","attachment; filename=shinsen-battle-logs.json");s.json(read())});
+app.listen(PORT,()=>console.log("http://localhost:"+PORT));
