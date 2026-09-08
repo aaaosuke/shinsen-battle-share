@@ -2,7 +2,7 @@ const express=require("express"),multer=require("multer"),path=require("path"),f
 const app=express(),PORT=+process.env.PORT||3000,BASE=(process.env.PUBLIC_BASE_URL||"").replace(/\/$/,""),ADMIN=process.env.ADMIN_PASSWORD||"change-this-password";
 const MAX_MB=+(process.env.MAX_FILE_MB||15),MAX_FILES=+(process.env.MAX_FILES||50),ROOT=__dirname;
 const UP=path.join(ROOT,"uploads"),DATA=path.join(ROOT,"data","logs.json"); fs.mkdirSync(UP,{recursive:true});fs.mkdirSync(path.dirname(DATA),{recursive:true});if(!fs.existsSync(DATA))fs.writeFileSync(DATA,"[]");
-app.use(express.json());app.use(express.static(path.join(ROOT,"public")));app.use("/uploads",express.static(UP));
+app.use(express.json());app.use(express.static(ROOT));app.use("/uploads",express.static(UP));
 const storage=multer.diskStorage({destination:UP,filename:(r,f,cb)=>cb(null,Date.now()+"-"+crypto.randomUUID()+path.extname(f.originalname).toLowerCase())});
 const upload=multer({storage,limits:{fileSize:MAX_MB*1024*1024,files:MAX_FILES},fileFilter:(r,f,cb)=>cb(null,/^image\/(jpeg|png|webp|gif)$/.test(f.mimetype))});
 const read=()=>JSON.parse(fs.readFileSync(DATA,"utf8")),write=x=>fs.writeFileSync(DATA,JSON.stringify(x,null,2));
