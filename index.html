@@ -1,5 +1,87 @@
-<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>真戦 戦闘ログ共有</title><link rel="stylesheet" href="/style.css"></head><body>
-<header><h1>⚔️ 真戦 戦闘ログ共有</h1><p>戦闘スクショを保存・共有するためのサイト</p></header><main>
-<section class="panel"><h2>画像をアップロード</h2><form id="form"><div class="grid"><label>戦闘ID<input name="battleId" placeholder="例：顕如テスト001"></label><label>種類<select name="category"><option>戦報</option><option>通常攻撃</option><option>戦法</option><option>ダメージ</option><option>編成</option><option>その他</option></select></label></div><label>メモ<textarea name="note" placeholder="例：通常攻撃ダメージ確認"></textarea></label><label class="drop"><input id="images" name="images" type="file" accept="image/*" multiple required><b>📷 画像を選択</b><span id="count">未選択</span></label><button>アップロード</button></form><div id="result"></div></section>
-<section class="panel"><div class="toolbar"><h2>共有ギャラリー</h2><div><input id="search" placeholder="検索"><a href="/api/export">JSON出力</a></div></div><div id="gallery" class="gallery"></div></section></main>
-<script src="/app.js"></script></body></html>
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>真戦 戦闘データ研究室</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <h1>真戦 戦闘データ研究室</h1>
+    <p>スクショ収集 → AI解析 → 実測データ化</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>① 戦闘スクショを追加</h2>
+      <form id="uploadForm">
+        <div class="row">
+          <label>戦闘ID（任意）<input name="battleId" placeholder="例: B001"></label>
+          <label>カテゴリ
+            <select name="category">
+              <option>戦闘ログ</option>
+              <option>通常攻撃</option>
+              <option>戦法</option>
+              <option>バフ・デバフ</option>
+              <option>その他</option>
+            </select>
+          </label>
+        </div>
+        <label>メモ（任意）<input name="note" placeholder="例: 顕如編成・ターン1"></label>
+        <label class="drop">
+          <span>画像を複数選択</span>
+          <input id="images" type="file" name="images" accept="image/jpeg,image/png,image/webp,image/gif" multiple required>
+        </label>
+        <button type="submit">アップロード</button>
+      </form>
+      <p id="uploadStatus" class="status"></p>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <div>
+          <h2>② AI解析</h2>
+          <p class="muted">画像はサーバー側からAIへ送り、構造化JSONとして保存します。</p>
+        </div>
+        <button id="analyzeAll" class="primary">未解析を全部解析</button>
+      </div>
+      <p id="aiStatus" class="status"></p>
+    </section>
+
+    <section class="card">
+      <div class="toolbar">
+        <h2>③ データ</h2>
+        <div>
+          <a class="button secondary" href="/api/export">JSONエクスポート</a>
+          <button id="refresh" class="secondary">更新</button>
+        </div>
+      </div>
+      <div id="summary"></div>
+      <div id="gallery" class="grid"></div>
+    </section>
+  </main>
+
+  <template id="recordTemplate">
+    <article class="record">
+      <img class="thumb" alt="">
+      <div class="recordBody">
+        <div class="recordTop">
+          <div>
+            <strong class="name"></strong>
+            <div class="meta"></div>
+          </div>
+          <span class="badge"></span>
+        </div>
+        <div class="analysis"></div>
+        <div class="actions">
+          <button class="analyze">この画像をAI解析</button>
+          <button class="delete danger">削除</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="/app.js"></script>
+</body>
+</html>
